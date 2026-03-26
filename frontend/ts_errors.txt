@@ -1,0 +1,17 @@
+src/App.tsx(2,8): error TS2882: Cannot find module or type declarations for side-effect import of './App.css'.
+src/hooks/useJobPolling.ts(14,34): error TS2503: Cannot find namespace 'NodeJS'.
+src/main.tsx(5,8): error TS2882: Cannot find module or type declarations for side-effect import of './index.css'.
+src/pages/DashboardPage.tsx(74,23): error TS2339: Property 'deleteProject' does not exist on type 'ApiClient'.
+src/pages/DashboardPage.tsx(86,5): error TS2554: Expected 3 arguments, but got 1.
+src/pages/LoginPage.tsx(38,7): error TS2554: Expected 3 arguments, but got 1.
+src/pages/RegisterPage.tsx(49,7): error TS2554: Expected 3 arguments, but got 1.
+src/pages/WorkflowPage.tsx(37,58): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/pages/WorkflowPage.tsx(38,16): error TS6133: 'isPolling' is declared but its value is never read.
+src/pages/WorkflowPage.tsx(202,19): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/pages/WorkflowPage.tsx(226,30): error TS2339: Property 'error' does not exist on type 'GenerationJob'.
+src/services/api/client.ts(2,45): error TS2307: Cannot find module '../types/workflow.types' or its corresponding type declarations.
+src/store/index.ts(2,10): error TS6133: 'WorkflowState' is declared but its value is never read.
+src/store/index.ts(2,42): error TS6133: 'JobStatus' is declared but its value is never read.
+src/utils/helpers.ts(26,9): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.

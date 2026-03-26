@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { WorkflowState, FileWithPreview, JobStatus, GenerationJob, CostEstimate } from '../types/workflow.types';
+import { FileWithPreview, GenerationJob, CostEstimate } from '../types/workflow.types';
 
 interface UploadStore {
   files: {
@@ -124,7 +124,7 @@ interface AuthStore {
   email?: string;
   userCredits: number;
   isAuthenticated: boolean;
-  setAuth: (userId: string, email: string, credits: number) => void;
+  setAuth: (data: { userId: string; email: string; userCredits: number; isAuthenticated: boolean }) => void;
   logout: () => void;
   setCredits: (credits: number) => void;
 }
@@ -134,7 +134,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   email: undefined,
   userCredits: 0,
   isAuthenticated: false,
-  setAuth: (userId, email, credits) => set({ userId, email, userCredits: credits, isAuthenticated: true }),
+  setAuth: (data) => set({ userId: data.userId, email: data.email, userCredits: data.userCredits, isAuthenticated: data.isAuthenticated }),
   logout: () => set({ userId: undefined, email: undefined, isAuthenticated: false }),
   setCredits: (credits) => set({ userCredits: credits }),
 }));

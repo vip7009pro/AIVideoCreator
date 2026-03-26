@@ -34,8 +34,8 @@ export const WorkflowPage: React.FC = () => {
 
   const { currentStep, completedSteps, goToStep, completeStep, reset } = useWorkflowStore();
   const { files, clearFiles } = useUploadStore();
-  const { uploadBothFiles, isUploading } = useFileUpload(projectId);
-  const { job, isPolling } = useJobPolling(undefined, true);
+  const { uploadBothFiles, isUploading } = useFileUpload(projectId || undefined);
+  const { job } = useJobPolling(undefined, true);
 
   // Initialize projectId from URL or create new project
   useEffect(() => {
@@ -199,7 +199,7 @@ export const WorkflowPage: React.FC = () => {
                 <CostEstimateCard
                   estimate={estimatedCost}
                   isLoading={isEstimating}
-                  error={costError}
+                  error={costError || undefined}
                 />
 
                 <button
@@ -221,14 +221,14 @@ export const WorkflowPage: React.FC = () => {
 
                 <JobStatusCard
                   jobId={job.id}
-                  status={job.status as any}
+                  status={job.overallStatus as any}
                   progress={0}
-                  error={job.error}
+                  error={job.errorMessage}
                   startedAt={job.createdAt}
                   completedAt={job.completedAt}
                 />
 
-                {job.status === 'completed' && (
+                {job.overallStatus === 'completed' && (
                   <button
                     onClick={handleReset}
                     className="mt-6 w-full rounded-lg bg-blue-600 py-3 px-4 font-medium text-white hover:bg-blue-700"

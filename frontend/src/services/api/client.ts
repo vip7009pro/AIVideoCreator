@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { GenerationJob, CostEstimate } from '../types/workflow.types';
+import { GenerationJob, CostEstimate } from '../../types/workflow.types';
 
 export class ApiClient {
   private client: AxiosInstance;
@@ -42,14 +42,14 @@ export class ApiClient {
 
   async register(email: string, password: string): Promise<{ userId: string; token: string }> {
     const response = await this.client.post('/auth/register', { email, password });
-    this.setToken(response.data.token);
-    return response.data;
+    this.setToken(response.data.data.token);
+    return response.data.data;
   }
 
   async login(email: string, password: string): Promise<{ userId: string; token: string }> {
     const response = await this.client.post('/auth/login', { email, password });
-    this.setToken(response.data.token);
-    return response.data;
+    this.setToken(response.data.data.token);
+    return response.data.data;
   }
 
   async logout(): Promise<void> {
@@ -61,12 +61,16 @@ export class ApiClient {
 
   async createProject(name: string, description?: string): Promise<{ id: string }> {
     const response = await this.client.post('/projects', { name, description });
-    return response.data;
+    return response.data.data;
   }
 
   async getProjects(): Promise<any[]> {
     const response = await this.client.get('/projects');
-    return response.data;
+    return response.data.data;
+  }
+
+  async deleteProject(projectId: string): Promise<void> {
+    await this.client.delete(`/projects/${projectId}`);
   }
 
   // ============= File Upload =============
@@ -86,7 +90,7 @@ export class ApiClient {
       },
     });
 
-    return response.data;
+    return response.data.data;
   }
 
   // ============= Cost Estimation =============
@@ -99,7 +103,7 @@ export class ApiClient {
       duration,
       includeAudio,
     });
-    return response.data;
+    return response.data.data;
   }
 
   // ============= Generation =============
@@ -120,17 +124,17 @@ export class ApiClient {
       productAssetId,
       ...videoSettings,
     });
-    return response.data;
+    return response.data.data;
   }
 
   async getJobStatus(jobId: string): Promise<GenerationJob> {
     const response = await this.client.get(`/jobs/${jobId}/status`);
-    return response.data;
+    return response.data.data;
   }
 
   async getJobOutput(jobId: string): Promise<{ videoUrl?: string; audioUrl?: string }> {
     const response = await this.client.get(`/jobs/${jobId}/output`);
-    return response.data;
+    return response.data.data;
   }
 
   // ============= Helper Methods =============

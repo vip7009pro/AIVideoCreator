@@ -8,10 +8,12 @@ import { ProviderFactory } from './providers/ProviderFactory';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import generationRoutes from './routes/generation';
+import { JobPollingService } from './services/JobPollingService';
 
 const app: Express = express();
 const logger = Logger.getInstance();
 const prisma = new PrismaClient();
+const jobPollingService = new JobPollingService(prisma);
 
 // Ensure uploads directory exists
 FileSystemHelper.ensureDirectoryExists(config.uploadDir);
@@ -52,6 +54,9 @@ async function initialize() {
     // Initialize providers
     await ProviderFactory.initialize();
 
+    // Start background services
+    jobPollingService.start();
+
     // Start server
     app.listen(config.port, () => {
       logger.info(`✓ Server running on http://localhost:${config.port}`);
@@ -67,12 +72,14 @@ async function initialize() {
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
   logger.info('Shutting down gracefully...');
+  jobPollingService.stop();
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   logger.info('Shutting down gracefully...');
+  jobPollingService.stop();
   await prisma.$disconnect();
   process.exit(0);
 });

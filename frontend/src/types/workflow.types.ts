@@ -18,7 +18,7 @@ export interface FileWithPreview {
 
 export interface GenerationJob {
   id: string;
-  status: JobStatus;
+  overallStatus: JobStatus;
   imageGenerationStatus?: JobStatus;
   videoGenerationStatus?: JobStatus;
   audioGenerationStatus?: JobStatus;

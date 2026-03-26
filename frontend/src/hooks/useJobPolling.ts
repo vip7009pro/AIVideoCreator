@@ -17,16 +17,16 @@ export const useJobPolling = (jobId?: string, enabled = true) => {
     if (!jobId) return;
 
     try {
-      const response = await apiClient.getJobStatus(jobId);
-      setJob(response.data);
+      const jobDetails = await apiClient.getJobStatus(jobId);
+      setJob(jobDetails);
 
       // Stop polling if job is completed or failed
-      if (['completed', 'failed'].includes(response.data.overallStatus)) {
+      if (['completed', 'failed'].includes(jobDetails.overallStatus)) {
         if (pollIntervalRef.current) {
           clearInterval(pollIntervalRef.current);
           setIsPolling(false);
         }
-        logger.info(`Job ${jobId} finished with status: ${response.data.overallStatus}`);
+        logger.info(`Job ${jobId} finished with status: ${jobDetails.overallStatus}`);
       }
 
       setError(null);
