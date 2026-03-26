@@ -1,0 +1,337 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============= User & Authentication =============
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  
+  // Relations
+  projects             Project[]
+  generationJobs       GenerationJob[]
+  apiLogs              ApiLog[]
+  credits              UserCredits?
+  creditTransactions   CreditTransaction[]
+  
+  @@index([email])
+}
+
+model UserCredits {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  availableCredits   Int    @default(50)  // Stored in cents equivalent for precision
+  reservedCredits    Int    @default(0)
+  usedCredits        Int    @default(0)
+  lastRefillDate  DateTime  @default(now())
+  creditTier      String    @default("free")  // free, pro, enterprise
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+// ============= Projects & Assets =============
+
+model Project {
+  id              String    @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  status          String    @default("active")  // active, archived
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assets          ProjectAsset[]
+  generationJobs  GenerationJob[]
+  outputs         GenerationOutput[]
+  
+  @@index([userId])
+}
+
+model ProjectAsset {
+  id              String    @id @default(cuid())
+  projectId       String
+  userId          String
+  assetType       String    // product_image, model_image, template
+  originalFileName String
+  storageUrl      String
+  storageKey      String
+  fileSize        Int
+  mimeType        String
+  width           Int?
+  height          Int?
+  uploadedAt      DateTime  @default(now())
+  deletedAt       DateTime?
+  
+  // Relations
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  imageGenerations ImageGeneration[]
+  
+  @@index([projectId])
+  @@index([userId])
+}
+
+// ============= Generation Pipeline =============
+
+model GenerationJob {
+  id                      String    @id @default(cuid())
+  userId                  String
+  projectId               String
+  overallStatus           String    @default("pending")  // pending, processing, completed, failed
+  
+  // Metadata
+  creditsEstimated        Int       @default(0)
+  creditsUsed             Int       @default(0)
+  errorMessage            String?
+  
+  // Timestamps
+  createdAt               DateTime  @default(now())
+  startedAt               DateTime?
+  completedAt             DateTime?
+  
+  // Relations
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project                 Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  imageGeneration         ImageGeneration?   @relation("GenerationJobToImageGeneration")
+  videoGeneration         VideoGeneration?   @relation("GenerationJobToVideoGeneration")
+  audioGeneration         AudioGeneration?   @relation("GenerationJobToAudioGeneration")
+  outputs                 GenerationOutput[]
+  creditTransaction       CreditTransaction?
+  
+  @@index([userId])
+  @@index([projectId])
+  @@index([overallStatus])
+}
+
+model ImageGeneration {
+  id                  String    @id @default(cuid())
+  jobId               String    @unique
+  projectId           String
+  projectAssetId      String    // Product image ID
+  modelAssetId        String?   // Model image ID (if applicable)
+  
+  // Execution
+  status              String    @default("pending")  // pending, processing, completed, failed
+  provider            String    @default("akool")
+  externalJobId       String?
+  parameters          Json?     // JSON blob for provider-specific params
+  
+  // Output
+  outputImageUrl      String?
+  outputImageStorageId String?
+  
+  // Error handling
+  errorMessage        String?
+  retryCount          Int       @default(0)
+  
+  // Timestamps
+  createdAt           DateTime  @default(now())
+  startedAt           DateTime?
+  completedAt         DateTime?
+  
+  // Relations
+  generationJob       GenerationJob   @relation("GenerationJobToImageGeneration", fields: [jobId], references: [id], onDelete: Cascade)
+  projectAsset        ProjectAsset    @relation(fields: [projectAssetId], references: [id])
+  videoGeneration     VideoGeneration?   @relation("ImageGenerationToVideoGeneration")
+  
+  @@index([jobId])
+  @@index([status])
+}
+
+model VideoGeneration {
+  id                      String    @id @default(cuid())
+  jobId                   String    @unique
+  projectId               String
+  imageGenerationJobId    String    @unique
+  
+  // Input
+  inputImageId            String?
+  
+  // Settings
+  duration                Int       @default(10)  // in seconds: 5, 10, 15
+  modelMovement           String    @default("walking")  // walking, posing
+  videoStyle              String    @default("default")
+  
+  // Execution
+  status                  String    @default("pending")  // pending, processing, completed, failed
+  provider                String    @default("kling")
+  externalJobId           String?
+  parameters              Json?
+  
+  // Output
+  outputVideoUrl          String?
+  outputVideoStorageId    String?
+  videoDurationActual     Int?
+  
+  // Error handling
+  errorMessage            String?
+  retryCount              Int       @default(0)
+  
+  // Timestamps
+  createdAt               DateTime  @default(now())
+  startedAt               DateTime?
+  completedAt             DateTime?
+  
+  // Relations
+  generationJob           GenerationJob   @relation("GenerationJobToVideoGeneration", fields: [jobId], references: [id], onDelete: Cascade)
+  imageGeneration         ImageGeneration @relation("ImageGenerationToVideoGeneration", fields: [imageGenerationJobId], references: [id], onDelete: Cascade)
+  audioGeneration         AudioGeneration?   @relation("VideoGenerationToAudioGeneration")
+  
+  @@index([jobId])
+  @@index([status])
+  @@index([externalJobId])
+}
+
+model AudioGeneration {
+  id                    String    @id @default(cuid())
+  jobId                 String    @unique
+  projectId             String
+  videoGenerationJobId  String    @unique
+  
+  // Input
+  inputVideoId          String?
+  
+  // Settings
+  voiceProfile          String    @default("default")
+  language              String    @default("en")
+  audioStyle            String    @default("tts")  // tts, background_music
+  scriptText            String?   // For TTS
+  
+  // Execution
+  status                String    @default("pending")  // pending, processing, completed, failed
+  provider              String    @default("elevenlabs")
+  externalJobId         String?
+  parameters            Json?
+  
+  // Output
+  outputAudioUrl        String?
+  outputAudioStorageId  String?
+  audioDuration         Int?      // in seconds
+  
+  // Error handling
+  errorMessage          String?
+  retryCount            Int       @default(0)
+  
+  // Timestamps
+  createdAt             DateTime  @default(now())
+  startedAt             DateTime?
+  completedAt           DateTime?
+  
+  // Relations
+  generationJob         GenerationJob   @relation("GenerationJobToAudioGeneration", fields: [jobId], references: [id], onDelete: Cascade)
+  videoGeneration       VideoGeneration @relation("VideoGenerationToAudioGeneration", fields: [videoGenerationJobId], references: [id], onDelete: Cascade)
+  
+  @@index([jobId])
+  @@index([status])
+  @@index([externalJobId])
+}
+
+// ============= Generated Outputs =============
+
+model GenerationOutput {
+  id              String    @id @default(cuid())
+  jobId           String
+  userId          String
+  projectId       String
+  
+  // Output info
+  outputType      String    // image, video, audio
+  fileName        String
+  storageUrl      String
+  storageKey      String
+  fileSize        Int
+  mimeType        String
+  
+  // Metadata
+  duration        Int?      // For video/audio, duration in seconds
+  width           Int?      // For images
+  height          Int?
+  
+  // Lifecycle
+  retentionPolicy String    @default("permanent")  // permanent, expire_7d, expire_30d
+  downloadCount   Int       @default(0)
+  lastDownloadedAt DateTime?
+  createdAt       DateTime  @default(now())
+  deletedAt       DateTime?
+  
+  // Relations
+  generationJob   GenerationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@index([jobId])
+  @@index([userId])
+  @@index([projectId])
+  @@index([outputType])
+}
+
+// ============= Credit & Audit =============
+
+model CreditTransaction {
+  id              String    @id @default(cuid())
+  userId          String
+  jobId           String?   @unique
+  
+  // Transaction details
+  type            String    // purchase, job_consumed, refund, adjustment, bonus
+  amount          Int       // Positive for credit, negative for debit
+  reason          String?
+  
+  // Metadata
+  details         Json?     // Additional context: provider, duration, etc.
+  createdAt       DateTime  @default(now())
+  
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generationJob   GenerationJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model ApiLog {
+  id              String    @id @default(cuid())
+  userId          String?
+  jobId           String?
+  
+  // Request
+  endpoint        String
+  method          String    // GET, POST, etc.
+  
+  // Response
+  statusCode      Int
+  responseTime    Int       // milliseconds
+  resultStatus    String    // success, rate_limited, error
+  errorMessage    String?
+  
+  // Credits
+  creditsDeducted Int       @default(0)
+  
+  // Timestamp
+  timestamp       DateTime  @default(now())
+  
+  // Relations
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([endpoint])
+  @@index([timestamp])
+  @@index([resultStatus])
+}

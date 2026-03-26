@@ -1,0 +1,21 @@
+{
+  "name": "ai-video-creator",
+  "version": "0.1.0",
+  "description": "AI Video Generation Platform for Affiliate Marketing",
+  "private": true,
+  "scripts": {
+    "dev-backend": "cd backend && yarn run dev",
+    "dev-frontend": "cd frontend && yarn run dev",
+    "dev": "yarn run dev-backend & yarn run dev-frontend",
+    "build-backend": "cd backend && yarn run build",
+    "build-frontend": "cd frontend && yarn run build",
+    "build": "yarn run build-backend && yarn run build-frontend",
+    "prisma:migrate": "cd backend && yarn run prisma:migrate",
+    "prisma:studio": "cd backend && yarn run prisma:studio",
+    "prisma:seed": "cd backend && yarn run prisma:seed"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
