@@ -90,7 +90,10 @@ export class ApiClient {
       },
     });
 
-    return response.data.data;
+    return {
+      assetId: response.data.data.id,
+      url: response.data.data.storageUrl,
+    };
   }
 
   // ============= Cost Estimation =============
@@ -99,7 +102,7 @@ export class ApiClient {
     duration: 5 | 10 | 15,
     includeAudio: boolean = true
   ): Promise<CostEstimate> {
-    const response = await this.client.post('/estimate-cost', {
+    const response = await this.client.post('/generation/estimate-cost', {
       duration,
       includeAudio,
     });
@@ -111,6 +114,7 @@ export class ApiClient {
   async startGeneration(
     projectId: string,
     productAssetId: string,
+    modelAssetId: string,
     videoSettings: {
       duration: 5 | 10 | 15;
       modelMovement: 'walking' | 'posing';
@@ -119,21 +123,22 @@ export class ApiClient {
       scriptText?: string;
     }
   ): Promise<{ jobId: string; status: string }> {
-    const response = await this.client.post('/generate-video', {
+    const response = await this.client.post('/generation/generate-video', {
       projectId,
       productAssetId,
+      modelAssetId,
       ...videoSettings,
     });
     return response.data.data;
   }
 
   async getJobStatus(jobId: string): Promise<GenerationJob> {
-    const response = await this.client.get(`/jobs/${jobId}/status`);
+    const response = await this.client.post(`/generation/job/${jobId}/status`);
     return response.data.data;
   }
 
-  async getJobOutput(jobId: string): Promise<{ videoUrl?: string; audioUrl?: string }> {
-    const response = await this.client.get(`/jobs/${jobId}/output`);
+  async getJobOutput(jobId: string): Promise<GenerationJob> {
+    const response = await this.client.get(`/generation/job/${jobId}`);
     return response.data.data;
   }
 

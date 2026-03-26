@@ -21,7 +21,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
   return (
     <div className="relative">
       {/* Progress line */}
-      <div className="absolute left-6 top-16 h-[calc(100%-4rem)] w-0.5 bg-gray-200" />
+      <div className="absolute left-6 top-16 h-[calc(100%-4rem)] w-0.5 bg-slate-700" />
 
       {/* Steps */}
       <div className="space-y-6">
@@ -40,8 +40,8 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
                     : isCurrent
                     ? 'border-blue-500 bg-blue-500 animate-pulse'
                     : isActive
-                    ? 'border-blue-300 bg-blue-300'
-                    : 'border-gray-300 bg-gray-300'
+                    ? 'border-blue-900 bg-blue-900'
+                    : 'border-slate-700 bg-slate-700 text-slate-400'
                 }`}
               >
                 {isCompleted ? <Check size={20} /> : step.step}
@@ -51,12 +51,12 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
               <div className="flex-1 pt-2">
                 <h3
                   className={`font-semibold ${
-                    isCurrent ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-700'
+                    isCurrent ? 'text-blue-400' : isCompleted ? 'text-green-400' : 'text-slate-300'
                   }`}
                 >
                   {step.label}
                 </h3>
-                <p className="mt-1 text-sm text-gray-600">{step.description}</p>
+                <p className="mt-1 text-sm text-slate-400">{step.description}</p>
               </div>
             </div>
           );

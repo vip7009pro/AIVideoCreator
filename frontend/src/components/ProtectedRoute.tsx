@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, requireAuth = true }: ProtectedRouteProps) => {
   const { isAuthenticated } = useAuthStore();
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
 
   if (requireAuth && (!isAuthenticated || !token)) {
     return <Navigate to="/login" replace />;

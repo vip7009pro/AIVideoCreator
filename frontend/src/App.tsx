@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useAuthStore } from './store'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import { WorkflowPage } from './pages/WorkflowPage'
@@ -7,6 +9,12 @@ import { DashboardPage } from './pages/DashboardPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
+  const { checkAuth } = useAuthStore()
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

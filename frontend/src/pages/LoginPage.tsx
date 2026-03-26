@@ -34,7 +34,7 @@ export const LoginPage = () => {
     setLoading(true);
     try {
       const { userId, token } = await apiClient.login(formData.email, formData.password);
-      localStorage.setItem('token', token);
+      localStorage.setItem('auth_token', token);
       setAuth({
         userId,
         email: formData.email,

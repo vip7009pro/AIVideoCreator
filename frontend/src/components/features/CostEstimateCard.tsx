@@ -15,10 +15,10 @@ export const CostEstimateCard: React.FC<CostEstimateCardProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-gray-200 p-4">
+      <div className="rounded-lg border border-slate-700 p-4 bg-slate-800/50">
         <div className="animate-pulse space-y-2">
-          <div className="h-4 w-24 rounded bg-gray-200" />
-          <div className="h-8 w-32 rounded bg-gray-200" />
+          <div className="h-4 w-24 rounded bg-slate-700" />
+          <div className="h-8 w-32 rounded bg-slate-700" />
         </div>
       </div>
     );
@@ -33,29 +33,29 @@ export const CostEstimateCard: React.FC<CostEstimateCardProps> = ({
   return (
     <div className={`rounded-lg border-2 p-4 ${
       hasEnoughCredits 
-        ? 'border-green-200 bg-green-50' 
-        : 'border-red-200 bg-red-50'
+        ? 'border-green-900/50 bg-green-900/10' 
+        : 'border-red-900/50 bg-red-900/10'
     }`}>
       <div className="space-y-3">
         {/* Header */}
-        <h3 className="font-semibold text-gray-900">Cost Estimate</h3>
+        <h3 className="font-semibold text-white">Cost Estimate</h3>
 
         {/* Cost breakdown */}
         <div className="space-y-2 text-sm">
           {estimate.breakdown.imageGeneration > 0 && (
-            <div className="flex justify-between text-gray-700">
+            <div className="flex justify-between text-slate-300">
               <span>Image Generation</span>
               <span>{estimate.breakdown.imageGeneration} credits</span>
             </div>
           )}
           {estimate.breakdown.videoGeneration > 0 && (
-            <div className="flex justify-between text-gray-700">
+            <div className="flex justify-between text-slate-300">
               <span>Video Generation</span>
               <span>{estimate.breakdown.videoGeneration} credits</span>
             </div>
           )}
           {estimate.breakdown.audioGeneration > 0 && (
-            <div className="flex justify-between text-gray-700">
+            <div className="flex justify-between text-slate-300">
               <span>Audio Generation</span>
               <span>{estimate.breakdown.audioGeneration} credits</span>
             </div>
@@ -63,10 +63,10 @@ export const CostEstimateCard: React.FC<CostEstimateCardProps> = ({
         </div>
 
         {/* Total cost */}
-        <div className="border-t-2 border-gray-300 pt-2">
+        <div className="border-t border-slate-700 pt-2">
           <div className="flex justify-between">
-            <span className="font-medium text-gray-900">Total Cost</span>
-            <span className="text-lg font-bold text-blue-600">
+            <span className="font-medium text-white">Total Cost</span>
+            <span className="text-lg font-bold text-blue-400">
               {estimate.estimatedCost} credits
             </span>
           </div>
@@ -74,8 +74,8 @@ export const CostEstimateCard: React.FC<CostEstimateCardProps> = ({
 
         {/* Current credits */}
         <div className="flex justify-between text-sm">
-          <span className="text-gray-700">Your current credits</span>
-          <span className="font-medium text-gray-900">
+          <span className="text-slate-400">Your current credits</span>
+          <span className="font-medium text-white">
             {estimate.userCurrentCredits} credits
           </span>
         </div>

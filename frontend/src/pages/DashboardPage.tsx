@@ -82,7 +82,7 @@ export const DashboardPage = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('auth_token');
     setAuth({
       userId: '',
       email: '',

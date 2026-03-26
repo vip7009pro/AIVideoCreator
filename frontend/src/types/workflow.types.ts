@@ -22,6 +22,16 @@ export interface GenerationJob {
   imageGenerationStatus?: JobStatus;
   videoGenerationStatus?: JobStatus;
   audioGenerationStatus?: JobStatus;
+  videoGeneration?: {
+    status: JobStatus;
+    outputVideoUrl?: string;
+    errorMessage?: string;
+  };
+  audioGeneration?: {
+    status: JobStatus;
+    outputAudioUrl?: string;
+    errorMessage?: string;
+  };
   progress: number;
   createdAt: string;
   completedAt?: string;

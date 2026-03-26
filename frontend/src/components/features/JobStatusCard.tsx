@@ -25,10 +25,10 @@ export const JobStatusCard: React.FC<JobStatusCardProps> = ({
   onRetry,
 }) => {
   const statusColors = {
-    pending: 'bg-yellow-50 border-yellow-200',
-    processing: 'bg-blue-50 border-blue-200',
-    completed: 'bg-green-50 border-green-200',
-    failed: 'bg-red-50 border-red-200',
+    pending: 'bg-yellow-900/10 border-yellow-900/50',
+    processing: 'bg-blue-900/10 border-blue-900/50',
+    completed: 'bg-green-900/10 border-green-900/50',
+    failed: 'bg-red-900/10 border-red-900/50',
   };
 
   const statusIcons = {
@@ -52,8 +52,8 @@ export const JobStatusCard: React.FC<JobStatusCardProps> = ({
         <div className="flex items-center gap-3">
           {statusIcons[status]}
           <div>
-            <h3 className="font-semibold text-gray-900">{statusLabels[status]}</h3>
-            <p className="text-xs text-gray-600">Job ID: {jobId.substring(0, 8)}...</p>
+            <h3 className="font-semibold text-white">{statusLabels[status]}</h3>
+            <p className="text-xs text-slate-400">Job ID: {jobId.substring(0, 8)}...</p>
           </div>
         </div>
       </div>
@@ -62,10 +62,10 @@ export const JobStatusCard: React.FC<JobStatusCardProps> = ({
       {(status === 'processing' || status === 'pending') && (
         <div className="mt-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-700">Progress</p>
-            <p className="text-sm text-gray-600">{progress}%</p>
+            <p className="text-sm font-medium text-slate-300">Progress</p>
+            <p className="text-sm text-slate-400">{progress}%</p>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-700">
             <div
               className="h-full bg-blue-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
@@ -76,7 +76,7 @@ export const JobStatusCard: React.FC<JobStatusCardProps> = ({
 
       {/* Timeline */}
       {(startedAt || completedAt) && (
-        <div className="mt-4 space-y-2 text-xs text-gray-600">
+        <div className="mt-4 space-y-2 text-xs text-slate-400">
           {startedAt && <p>Started: {new Date(startedAt).toLocaleString()}</p>}
           {completedAt && <p>Completed: {new Date(completedAt).toLocaleString()}</p>}
         </div>

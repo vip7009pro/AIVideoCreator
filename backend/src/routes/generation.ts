@@ -51,13 +51,14 @@ router.post('/estimate-cost', authMiddleware, async (req: AuthRequest, res: Resp
   }
 });
 
-// POST /api/generation/start
-router.post('/start', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
+// POST /api/generation/generate-video
+router.post('/generate-video', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.userId;
     const {
       projectId,
-      imageGenerationJobId,
+      productAssetId,
+      modelAssetId,
       duration,
       modelMovement,
       voiceProfile,
@@ -67,10 +68,10 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response, ne
     } = req.body;
 
     // Validation
-    if (!projectId || !imageGenerationJobId) {
+    if (!projectId || !productAssetId || !modelAssetId) {
       return res.status(400).json({
         success: false,
-        error: 'projectId and imageGenerationJobId are required',
+        error: 'projectId, productAssetId, and modelAssetId are required',
       });
     }
 
@@ -93,16 +94,15 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response, ne
       });
     }
 
-    // Check image generation job exists
-    const imageJob = await prisma.imageGeneration.findUnique({
-      where: { id: imageGenerationJobId },
-      include: { generationJob: true },
+    // Check assets existence
+    const productAsset = await prisma.projectAsset.findUnique({
+      where: { id: productAssetId },
     });
 
-    if (!imageJob) {
+    if (!productAsset || productAsset.projectId !== projectId) {
       return res.status(404).json({
         success: false,
-        error: 'Image generation job not found',
+        error: 'Product asset not found',
       });
     }
 
@@ -127,7 +127,7 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response, ne
     // Reserve credits
     await costCalculator.reserveCredits(userId!, costEstimate.estimatedCost);
 
-    // Create generation job
+    // Create top-level generation job
     const generationJob = await prisma.generationJob.create({
       data: {
         userId: userId!,
@@ -137,12 +137,27 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response, ne
       },
     });
 
-    // Create video generation job
+    // Step 1: Create Image Generation record (Bypass Akool for MVP Phase 1)
+    // We mock this as completed using the product image as the result
+    const imageJob = await prisma.imageGeneration.create({
+      data: {
+        jobId: generationJob.id,
+        projectId,
+        projectAssetId: productAssetId,
+        modelAssetId,
+        status: 'completed', // Immediately completed for MVP
+        provider: 'akool',
+        outputImageUrl: productAsset.storageUrl,
+        completedAt: new Date(),
+      },
+    });
+
+    // Step 2: Create Video Generation record
     const videoJob = await prisma.videoGeneration.create({
       data: {
         jobId: generationJob.id,
         projectId,
-        imageGenerationJobId,
+        imageGenerationJobId: imageJob.id,
         duration,
         modelMovement: modelMovement || 'walking',
         status: 'pending',
@@ -150,7 +165,50 @@ router.post('/start', authMiddleware, async (req: AuthRequest, res: Response, ne
       },
     });
 
-    // Create audio generation job if requested
+    // Step 3: Trigger actual generation with AI provider
+    try {
+      const provider = ProviderFactory.create('kling');
+      const response = await (provider as any).generateVideo(
+        imageJob.outputImageUrl,
+        duration,
+        modelMovement || 'walking'
+      );
+
+      if (response.status === 'success') {
+        await prisma.videoGeneration.update({
+          where: { id: videoJob.id },
+          data: {
+            externalJobId: response.jobId,
+            status: 'processing',
+          },
+        });
+        
+        await prisma.generationJob.update({
+          where: { id: generationJob.id },
+          data: { 
+            overallStatus: 'processing',
+            startedAt: new Date()
+          },
+        });
+      } else {
+        throw new Error(response.error || 'Provider failed to start generation');
+      }
+    } catch (providerErr) {
+      logger.error('Failed to trigger AI provider:', providerErr);
+      await prisma.videoGeneration.update({
+        where: { id: videoJob.id },
+        data: {
+          status: 'failed',
+          errorMessage: providerErr instanceof Error ? providerErr.message : 'Provider error',
+        },
+      });
+      await prisma.generationJob.update({
+        where: { id: generationJob.id },
+        data: { overallStatus: 'failed' },
+      });
+    }
+
+    // Step 4: Create Audio Generation job if requested
     if (includeAudio) {
       await prisma.audioGeneration.create({
         data: {

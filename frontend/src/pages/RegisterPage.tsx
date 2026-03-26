@@ -45,7 +45,7 @@ export const RegisterPage = () => {
     setLoading(true);
     try {
       const { userId, token } = await apiClient.register(formData.email, formData.password);
-      localStorage.setItem('token', token);
+      localStorage.setItem('auth_token', token);
       setAuth({
         userId,
         email: formData.email,

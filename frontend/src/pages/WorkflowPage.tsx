@@ -32,10 +32,11 @@ export const WorkflowPage: React.FC = () => {
   const [costError, setCostError] = useState<string | null>(null);
   const [isEstimating, setIsEstimating] = useState(false);
 
-  const { currentStep, completedSteps, goToStep, completeStep, reset } = useWorkflowStore();
+  const { currentStep, completedSteps, productAssetId, modelAssetId, settings, goToStep, completeStep, setAssetIds, setSettings, reset } = useWorkflowStore();
   const { files, clearFiles } = useUploadStore();
   const { uploadBothFiles, isUploading } = useFileUpload(projectId || undefined);
-  const { job } = useJobPolling(undefined, true);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const { job } = useJobPolling(jobId || undefined, !!jobId);
 
   // Initialize projectId from URL or create new project
   useEffect(() => {
@@ -79,6 +80,7 @@ export const WorkflowPage: React.FC = () => {
     try {
       const uploadedIds = await uploadBothFiles();
       if (uploadedIds) {
+        setAssetIds(uploadedIds.productImageId!, uploadedIds.modelImageId!);
         completeStep(1);
         goToStep(2);
         logger.info('Images uploaded successfully');
@@ -96,21 +98,23 @@ export const WorkflowPage: React.FC = () => {
 
     // Estimate cost first
     await handleEstimateCost(settings.duration, true);
+    setSettings(settings);
     completeStep(2);
     goToStep(3);
   };
 
   const handleConfirmAndGenerate = async () => {
-    if (!projectId || !estimatedCost) {
-      logger.error('Missing project ID or cost estimate');
+    if (!projectId || !estimatedCost || !productAssetId || !modelAssetId || !settings) {
+      logger.error('Missing required data for generation');
       return;
     }
 
     try {
-      // TODO: Call API to start generation with the estimated settings
+      const { jobId } = await apiClient.startGeneration(projectId, productAssetId, modelAssetId, settings);
+      setJobId(jobId);
       completeStep(3);
       goToStep(4);
-      logger.info('Generation job submitted');
+      logger.info(`Generation job submitted: ${jobId}`);
     } catch (error) {
       logger.error('Generation start error:', error);
     }
@@ -124,7 +128,7 @@ export const WorkflowPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 py-8">
       <div className="mx-auto max-w-6xl px-4">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
@@ -136,8 +140,8 @@ export const WorkflowPage: React.FC = () => {
               <ArrowLeft size={18} />
               Back to Dashboard
             </button>
-            <h1 className="text-4xl font-bold text-gray-900">Video Generation Workflow</h1>
-            <p className="mt-2 text-lg text-gray-600">
+            <h1 className="text-4xl font-bold text-white">Video Generation Workflow</h1>
+            <p className="mt-2 text-lg text-gray-400">
               Create professional AI-generated videos from product and model images
             </p>
           </div>
@@ -148,8 +152,8 @@ export const WorkflowPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-8">
             {/* Step 1: Upload Images */}
             {currentStep >= 1 && (
-              <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <h2 className="mb-4 text-xl font-semibold text-gray-900">
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-xl">
+                <h2 className="mb-4 text-xl font-semibold text-white">
                   Step 1: Upload Images
                 </h2>
 
@@ -170,7 +174,7 @@ export const WorkflowPage: React.FC = () => {
                       </button>
                     </>
                   ) : (
-                    <p className="text-sm text-gray-600">Upload both images to continue</p>
+                    <p className="text-sm text-gray-400">Upload both images to continue</p>
                   )}
                 </div>
               </div>
@@ -178,8 +182,8 @@ export const WorkflowPage: React.FC = () => {
 
             {/* Step 2: Configure Settings */}
             {currentStep >= 2 && completedSteps.includes(1) && (
-              <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <h2 className="mb-4 text-xl font-semibold text-gray-900">
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-xl">
+                <h2 className="mb-4 text-xl font-semibold text-white">
                   Step 2: Configure Settings
                 </h2>
                 <SettingsForm
@@ -191,8 +195,8 @@ export const WorkflowPage: React.FC = () => {
 
             {/* Step 3: Review Cost */}
             {currentStep >= 3 && completedSteps.includes(2) && (
-              <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <h2 className="mb-4 text-xl font-semibold text-gray-900">
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-xl">
+                <h2 className="mb-4 text-xl font-semibold text-white">
                   Step 3: Review & Confirm
                 </h2>
 
@@ -213,22 +217,23 @@ export const WorkflowPage: React.FC = () => {
             )}
 
             {/* Step 4: Generation Progress */}
-            {currentStep >= 4 && completedSteps.includes(3) && job && (
-              <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <h2 className="mb-4 text-xl font-semibold text-gray-900">
+            {currentStep >= 4 && completedSteps.includes(3) && (
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-xl">
+                <h2 className="mb-4 text-xl font-semibold text-white">
                   Step 4: Generation in Progress
                 </h2>
 
                 <JobStatusCard
-                  jobId={job.id}
-                  status={job.overallStatus as any}
+                  jobId={jobId || ''}
+                  status={job?.overallStatus as any || 'pending'}
                   progress={0}
-                  error={job.errorMessage}
-                  startedAt={job.createdAt}
-                  completedAt={job.completedAt}
+                  error={job?.errorMessage}
+                  outputUrl={job?.videoGeneration?.outputVideoUrl}
+                  startedAt={job?.createdAt || new Date().toISOString()}
+                  completedAt={job?.completedAt}
                 />
 
-                {job.overallStatus === 'completed' && (
+                {job?.overallStatus === 'completed' && (
                   <button
                     onClick={handleReset}
                     className="mt-6 w-full rounded-lg bg-blue-600 py-3 px-4 font-medium text-white hover:bg-blue-700"
@@ -241,8 +246,8 @@ export const WorkflowPage: React.FC = () => {
           </div>
 
           {/* Sidebar: Progress indicator */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
-            <h3 className="mb-6 text-lg font-semibold text-gray-900">Workflow Progress</h3>
+          <div className="rounded-lg border border-slate-700 bg-slate-800 p-6 shadow-xl h-fit">
+            <h3 className="mb-6 text-lg font-semibold text-white">Workflow Progress</h3>
             <StepIndicator
               steps={WORKFLOW_STEPS}
               currentStep={currentStep}

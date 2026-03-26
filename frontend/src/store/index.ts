@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FileWithPreview, GenerationJob, CostEstimate } from '../types/workflow.types';
+import { FileWithPreview, GenerationJob, CostEstimate, GenerationSettings } from '../types/workflow.types';
 
 interface UploadStore {
   files: {
@@ -91,10 +91,15 @@ export const useJobStore = create<JobStore>((set) => ({
 interface WorkflowStore {
   currentStep: number;
   completedSteps: number[];
+  productAssetId?: string;
+  modelAssetId?: string;
+  settings?: GenerationSettings;
   costEstimate?: CostEstimate;
   error?: string;
   goToStep: (step: number) => void;
   completeStep: (step: number) => void;
+  setAssetIds: (productAssetId: string, modelAssetId: string) => void;
+  setSettings: (settings: GenerationSettings) => void;
   setCostEstimate: (estimate: CostEstimate) => void;
   setError: (error?: string) => void;
   reset: () => void;
@@ -103,17 +108,25 @@ interface WorkflowStore {
 export const useWorkflowStore = create<WorkflowStore>((set) => ({
   currentStep: 1,
   completedSteps: [],
+  productAssetId: undefined,
+  modelAssetId: undefined,
+  settings: undefined,
   costEstimate: undefined,
   error: undefined,
   goToStep: (step) => set({ currentStep: step }),
   completeStep: (step) => set((state) => ({
     completedSteps: [...new Set([...state.completedSteps, step])],
   })),
+  setAssetIds: (productAssetId, modelAssetId) => set({ productAssetId, modelAssetId }),
+  setSettings: (settings) => set({ settings }),
   setCostEstimate: (estimate) => set({ costEstimate: estimate }),
   setError: (error) => set({ error }),
   reset: () => set({
     currentStep: 1,
     completedSteps: [],
+    productAssetId: undefined,
+    modelAssetId: undefined,
+    settings: undefined,
     costEstimate: undefined,
     error: undefined,
   }),
@@ -125,6 +138,7 @@ interface AuthStore {
   userCredits: number;
   isAuthenticated: boolean;
   setAuth: (data: { userId: string; email: string; userCredits: number; isAuthenticated: boolean }) => void;
+  checkAuth: () => void;
   logout: () => void;
   setCredits: (credits: number) => void;
 }
@@ -133,8 +147,19 @@ export const useAuthStore = create<AuthStore>((set) => ({
   userId: undefined,
   email: undefined,
   userCredits: 0,
-  isAuthenticated: false,
+  isAuthenticated: !!localStorage.getItem('auth_token'),
   setAuth: (data) => set({ userId: data.userId, email: data.email, userCredits: data.userCredits, isAuthenticated: data.isAuthenticated }),
-  logout: () => set({ userId: undefined, email: undefined, isAuthenticated: false }),
+  checkAuth: () => {
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // For MVP, we'll assume the token is valid if it exists
+      // In a real app, we'd decode the JWT to get user info or call a /me endpoint
+      set({ isAuthenticated: true });
+    }
+  },
+  logout: () => {
+    localStorage.removeItem('auth_token');
+    set({ userId: undefined, email: undefined, isAuthenticated: false });
+  },
   setCredits: (credits) => set({ userCredits: credits }),
 }));

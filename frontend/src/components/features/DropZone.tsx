@@ -84,8 +84,8 @@ export const DropZone: React.FC<DropZoneProps> = ({
       onDrop={handleDrop}
       className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
         isDragActive
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+          ? 'border-blue-500 bg-blue-900/20'
+          : 'border-slate-700 bg-slate-800/50 hover:border-slate-500'
       }`}
     >
       <input
@@ -94,11 +94,11 @@ export const DropZone: React.FC<DropZoneProps> = ({
         onChange={handleChange}
         className="absolute inset-0 cursor-pointer opacity-0"
       />
-      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-      <p className="mt-2 text-sm font-medium text-gray-700">
+      <Upload className="mx-auto h-12 w-12 text-slate-500" />
+      <p className="mt-2 text-sm font-medium text-slate-300">
         Drop {assetType === 'product_image' ? 'product image' : 'model image'} here
       </p>
-      <p className="text-xs text-gray-500">or click to browse</p>
+      <p className="text-xs text-slate-500">or click to browse</p>
     </div>
   );
 };
